@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hábitos & Saúde</title>
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/app.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">hábitos <span>& saúde</span></div>
+    <div class="sync-status">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncLabel">—</span>
+    </div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tabs-inner">
+    <div class="tab active"  onclick="switchTab('hoje')">Hoje</div>
+    <div class="tab"         onclick="switchTab('semana')">Semana</div>
+    <div class="tab"         onclick="switchTab('configurar')">Configurar</div>
+  </div>
+</div>
+
+<main style="max-width:900px;margin:0 auto;padding:32px 24px 80px;">
+
+  <!-- ── TAB: HOJE ─────────────────────────────────────── -->
+  <div class="section active" id="tab-hoje">
+
+    <div class="welcome-card">
+      <div class="welcome-code" id="welcomeCode"></div>
+      <div class="welcome-name" id="welcomeName">Olá 👋</div>
+      <div class="welcome-sub"  id="welcomeSub"></div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">Hoje</div>
+        <div class="kpi-value" id="scoreToday">0<sup>%</sup></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Esta semana</div>
+        <div class="kpi-value" id="scoreWeek">0<sup>%</sup></div>
+      </div>
+      <div class="kpi-card gold">
+        <div class="kpi-label">Sequência</div>
+        <div class="kpi-value" id="scoreStreak">0<sup> dias</sup></div>
+      </div>
+    </div>
+
+    <div class="date-nav">
+      <button onclick="changeDay(-1)">‹</button>
+      <div class="date-display">
+        <div class="date-main" id="dateMain"></div>
+        <div class="date-sub"  id="dateSub"></div>
+      </div>
+      <button onclick="changeDay(1)" id="btnNext">›</button>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">0 de 0 hábitos</div>
+
+    <div id="habitGroups"></div>
+  </div>
+
+  <!-- ── TAB: SEMANA ───────────────────────────────────── -->
+  <div class="section" id="tab-semana">
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Visão da semana</div>
+          <div class="card-subtitle">% de hábitos realizados por dia</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="weekChart"></canvas></div>
+      <div class="week-grid" id="weekGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Desempenho por hábito</div>
+          <div class="card-subtitle">Comparativo desta semana</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:280px"><canvas id="habitChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── TAB: CONFIGURAR ───────────────────────────────── -->
+  <div class="section" id="tab-configurar">
+
+    <div class="config-box" style="margin-bottom:28px;">
+      <div class="settings-title">Conexão com Google Sheets</div>
+      <label class="form-field">
+        <span>URL do Google Apps Script (Web App)</span>
+        <input class="config-input" id="scriptUrl"
+          placeholder="https://script.google.com/macros/s/…/exec"
+          oninput="saveConfig()">
+      </label>
+      <p class="config-hint">
+        Cole aqui a URL gerada após implantar o script.<br>
+        Status atual: <strong id="configStatus">não configurado</strong>
+      </p>
+    </div>
+
+    <div style="margin-bottom:32px;">
+      <div class="settings-title">Hábitos cadastrados</div>
+      <div id="habitsList"></div>
+
+      <div class="add-form">
+        <div class="add-form-label">+ Adicionar hábito</div>
+        <div class="add-form-row">
+          <div class="form-field">
+            <label>Nome do hábito</label>
+            <input class="form-input" id="newHabitName" placeholder="Ex: Beber 2L de água">
+          </div>
+          <div class="form-field">
+            <label>Categoria</label>
+            <select class="form-select" id="newHabitGroup">
+              <option value="Nutrição">🥗 Nutrição</option>
+              <option value="Hidratação">💧 Hidratação</option>
+              <option value="Movimento">🏃 Movimento</option>
+              <option value="Sono">🌙 Sono</option>
+              <option value="Mente">🧠 Mente</option>
+              <option value="Intestino">🦠 Intestino</option>
+              <option value="Outros">✦ Outros</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="addHabit()">Adicionar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- Seções (visibilidade via JS) -->
+<style>
+  .section { display: none; }
+  .section.active { display: block; }
+</style>
+
+<!-- Módulo ES — usa import/export -->
+<script type="module" src="js/app.js"></script>
+
+</body>
+</html>

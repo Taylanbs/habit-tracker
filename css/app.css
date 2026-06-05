@@ -1,0 +1,357 @@
+/* ═══════════════════════════════════════════
+   APP.CSS — Estilos específicos do app
+   do paciente (index.html)
+   ═══════════════════════════════════════════ */
+
+/* ── SYNC STATUS ─────────────────────────── */
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ccc;
+  transition: background 0.3s;
+}
+
+.sync-dot.syncing { background: var(--gold); animation: pulse 1s infinite; }
+.sync-dot.ok      { background: #5cb85c; }
+.sync-dot.err     { background: #e05c5c; }
+
+/* ── WELCOME CARD ────────────────────────── */
+.welcome-card {
+  background: linear-gradient(135deg, var(--teal-dark), var(--teal));
+  border-radius: 20px;
+  padding: 28px 32px;
+  margin-bottom: 28px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-card::after {
+  content: '';
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.welcome-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 300;
+  margin-bottom: 4px;
+}
+
+.welcome-sub  { font-size: 13px; opacity: 0.8; }
+.welcome-code { position: absolute; top: 20px; right: 28px; font-size: 11px; opacity: 0.6; letter-spacing: 0.1em; }
+
+/* ── DATE NAVIGATOR ──────────────────────── */
+.date-nav {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow-sm);
+}
+
+.date-nav button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  color: var(--teal);
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.date-nav button:hover    { background: var(--teal-light); }
+.date-nav button:disabled { opacity: 0.3; cursor: default; }
+
+.date-display { text-align: center; }
+
+.date-main {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--teal-dark);
+  text-transform: capitalize;
+}
+
+.date-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── HABIT GROUPS ────────────────────────── */
+.group-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--teal-dark);
+  margin: 32px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.group-title .icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--teal-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* ── HABIT CARDS ─────────────────────────── */
+.habits-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.habit-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow-sm);
+  user-select: none;
+}
+
+.habit-card:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
+  border-color: var(--teal);
+}
+
+.habit-card.checked {
+  background: var(--teal-light);
+  border-color: var(--teal);
+}
+
+.check-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.habit-card.checked .check-box {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: white;
+}
+
+.habit-name {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.3;
+  flex: 1;
+  transition: color 0.2s;
+}
+
+.habit-card.checked .habit-name {
+  color: var(--teal-dark);
+  font-weight: 500;
+}
+
+.habit-syncing {
+  font-size: 11px;
+  color: var(--gold);
+  margin-left: auto;
+}
+
+/* ── WEEK MINI GRID ──────────────────────── */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.week-day {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.week-day .wd-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+.week-day .wd-pct   { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--teal-dark); }
+
+.week-day.today { border-color: var(--teal); background: var(--teal-light); }
+.week-day.full  { background: var(--teal); border-color: var(--teal); }
+.week-day.full .wd-label,
+.week-day.full .wd-pct { color: white; }
+.week-day.good  { background: rgba(181, 216, 193, 0.4); border-color: var(--sage); }
+
+/* ── SETTINGS ────────────────────────────── */
+.settings-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  color: var(--teal-dark);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.habit-list-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.hli-dot  { width: 10px; height: 10px; border-radius: 50%; background: var(--teal); flex-shrink: 0; }
+.hli-name { flex: 1; font-size: 14px; }
+.hli-group{ font-size: 11px; color: var(--text-muted); }
+
+.btn-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.btn-del:hover { color: #e05c5c; background: #fff0f0; }
+
+.add-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin-top: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.add-form-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--teal-dark);
+  margin-bottom: 14px;
+}
+
+.add-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+/* ── CONFIG BOX ──────────────────────────── */
+.config-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.config-input {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 12px;
+}
+
+.config-input:focus { border-color: var(--teal); }
+
+.config-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.config-hint code {
+  background: var(--teal-light);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--teal-dark);
+}
+
+/* ── DANGER ZONE ─────────────────────────── */
+.danger-zone {
+  border: 1px solid rgba(224, 92, 92, 0.2);
+  border-radius: 14px;
+  padding: 20px 22px;
+}
+
+.btn-danger {
+  background: none;
+  border: 1px solid #e05c5c;
+  color: #e05c5c;
+  border-radius: var(--radius-sm);
+  padding: 9px 18px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.btn-danger:hover { background: #e05c5c; color: white; }
+
+/* ── RESPONSIVE ──────────────────────────── */
+@media (max-width: 600px) {
+  .habits-grid   { grid-template-columns: 1fr; }
+  .add-form-row  { grid-template-columns: 1fr; }
+  .week-grid     { gap: 4px; }
+}
