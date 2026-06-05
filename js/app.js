@@ -9,11 +9,12 @@ import {
   GROUP_ICONS, DAY_NAMES, DEFAULT_HABITS,
 } from './utils.js';
 
-// ── CONSTANTES ────────────────────────────────────────────
-const SCRIPT_URL_KEY = 'gsheet_script_url';
+// ── URL DO APPS SCRIPT (fixa — não precisa o paciente configurar) ──
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBCQIagtpMtHHksBvAQmU9Uf4q4maNUgqWyUne8fRzo61MaPyrozk0emMvy4IX4cbM/exec';
+// Exemplo:
+// const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx.../exec';
 
-// ── ESTADO ────────────────────────────────────────────────
-let currentDateOffset = 0;
+const SCRIPT_URL_KEY = 'gsheet_script_url';
 const charts = {};
 
 // ── STORAGE HELPERS ───────────────────────────────────────
@@ -35,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('welcomeName').textContent  = `Olá, ${name.split(' ')[0]} 👋`;
   document.getElementById('welcomeSub').textContent   = formatDate(new Date());
 
-  const url = load(SCRIPT_URL_KEY, '');
+  const url = SCRIPT_URL || load(SCRIPT_URL_KEY, '');
   if (url) {
     document.getElementById('scriptUrl').value = url;
     document.getElementById('configStatus').textContent  = 'configurado';
