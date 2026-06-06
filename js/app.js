@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════
 
 // ── ⚙️  ÚNICA LINHA QUE VOCÊ PRECISA EDITAR ─────────────
-var SCRIPT_URL = 'COLE_AQUI_SUA_URL_DO_APPS_SCRIPT';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBCQIagtpMtHHksBvAQmU9Uf4q4maNUgqWyUne8fRzo61MaPyrozk0emMvy4IX4cbM/exec';
 // Exemplo:
 // var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx.../exec';
 // ────────────────────────────────────────────────────────
