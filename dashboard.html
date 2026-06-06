@@ -4,99 +4,82 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard — Taylan Souza · Nutrição</title>
-
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/dashboard.css">
-
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
 <div class="layout">
 
-  <!-- ── SIDEBAR ──────────────────────────────────────── -->
   <aside>
     <div class="brand">
       <div class="brand-logo">Taylan Souza<br><em>Nutrição & Saúde</em></div>
       <div class="brand-sub">Dashboard clínico</div>
     </div>
-
     <div class="nav-section">
       <div class="nav-label">Visão geral</div>
-      <div class="nav-item active" onclick="showPage('pacientes')">
+      <div class="nav-item active" onclick="showPage('pacientes', this)">
         <span class="ni">◎</span> Todos os pacientes
       </div>
     </div>
-
     <div class="nav-section">
       <div class="nav-label">Análise</div>
-      <div class="nav-item" onclick="showPage('individual')">
+      <div class="nav-item" onclick="showPage('individual', this)">
         <span class="ni">▤</span> Paciente individual
       </div>
-      <div class="nav-item" onclick="showPage('habitos')">
+      <div class="nav-item" onclick="showPage('habitos', this)">
         <span class="ni">◈</span> Por hábito
       </div>
     </div>
-
     <div class="aside-footer">
       <div class="config-url-label">Google Apps Script URL</div>
       <input type="text" id="scriptUrlDash"
         placeholder="https://script.google.com/…"
-        oninput="saveScriptUrl()">
+        oninput="saveDashUrl()">
       <button class="btn-load" onclick="loadAllData()">↺ Carregar dados</button>
     </div>
   </aside>
 
-  <!-- ── MAIN ─────────────────────────────────────────── -->
   <div class="main-content">
-
     <div class="topbar">
       <div class="topbar-title" id="topbarTitle">Todos os pacientes</div>
       <div class="topbar-right">
         <div class="status-pill">
           <div class="status-dot" id="statusDot"></div>
-          <span id="statusLabel">Aguardando URL</span>
+          <span id="statusLabel">Cole a URL e clique em Carregar</span>
         </div>
       </div>
     </div>
 
-    <!-- ── PAGE: PACIENTES ─────────────────────────────── -->
+    <!-- PACIENTES -->
     <div class="page active" id="page-pacientes">
-
       <div id="kpiRowGlobal" class="kpi-row-4">
         <div class="skeleton sk-kpi"></div>
         <div class="skeleton sk-kpi"></div>
         <div class="skeleton sk-kpi"></div>
         <div class="skeleton sk-kpi"></div>
       </div>
-
       <div class="charts-row">
         <div class="card">
           <div class="card-header">
-            <div>
-              <div class="card-title">Adesão global — 30 dias</div>
-              <div class="card-subtitle">Média de todos os pacientes ativos</div>
-            </div>
+            <div><div class="card-title">Adesão global — 30 dias</div>
+            <div class="card-subtitle">Média de todos os pacientes</div></div>
           </div>
           <div class="chart-wrap tall"><canvas id="globalChart"></canvas></div>
         </div>
         <div class="card">
           <div class="card-header">
-            <div>
-              <div class="card-title">Por categoria</div>
-              <div class="card-subtitle">Média de adesão semanal</div>
-            </div>
+            <div><div class="card-title">Por categoria</div>
+            <div class="card-subtitle">Adesão acumulada</div></div>
           </div>
           <div class="chart-wrap tall"><canvas id="categoryChart"></canvas></div>
         </div>
       </div>
-
       <div class="card">
         <div class="card-header">
-          <div>
-            <div class="card-title">Pacientes</div>
-            <div class="card-subtitle">Clique para ver análise individual</div>
-          </div>
+          <div><div class="card-title">Pacientes</div>
+          <div class="card-subtitle">Clique para análise individual</div></div>
           <div class="card-badge" id="patientCount">0 ativos</div>
         </div>
         <div class="patient-list" id="patientList">
@@ -106,74 +89,55 @@
           </div>
         </div>
       </div>
-
     </div>
 
-    <!-- ── PAGE: INDIVIDUAL ────────────────────────────── -->
+    <!-- INDIVIDUAL -->
     <div class="page" id="page-individual">
-
       <div class="patient-picker">
         <span class="picker-label">Paciente</span>
         <div class="patient-chips" id="patientChips">
           <span class="no-patients">Carregue os dados primeiro</span>
         </div>
       </div>
-
       <div class="kpi-row-4">
-        <div class="kpi-dash k1">
-          <div class="kpi-icon">📅</div>
+        <div class="kpi-dash k1"><div class="kpi-icon">📅</div>
           <div class="kpi-label">Adesão hoje</div>
-          <div class="kpi-value" id="indToday">—<sup>%</sup></div>
-        </div>
-        <div class="kpi-dash k2">
-          <div class="kpi-icon">📆</div>
+          <div class="kpi-value" id="indToday">—<sup>%</sup></div></div>
+        <div class="kpi-dash k2"><div class="kpi-icon">📆</div>
           <div class="kpi-label">Média 7 dias</div>
-          <div class="kpi-value" id="ind7d">—<sup>%</sup></div>
-        </div>
-        <div class="kpi-dash k3">
-          <div class="kpi-icon">📊</div>
+          <div class="kpi-value" id="ind7d">—<sup>%</sup></div></div>
+        <div class="kpi-dash k3"><div class="kpi-icon">📊</div>
           <div class="kpi-label">Média 30 dias</div>
-          <div class="kpi-value" id="ind30d">—<sup>%</sup></div>
-        </div>
-        <div class="kpi-dash k4">
-          <div class="kpi-icon">🔥</div>
-          <div class="kpi-label">Sequência atual</div>
-          <div class="kpi-value" id="indStreak">—<sup> dias</sup></div>
-        </div>
+          <div class="kpi-value" id="ind30d">—<sup>%</sup></div></div>
+        <div class="kpi-dash k4"><div class="kpi-icon">🔥</div>
+          <div class="kpi-label">Sequência</div>
+          <div class="kpi-value" id="indStreak">—<sup> dias</sup></div></div>
       </div>
-
       <div class="charts-row">
         <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Evolução — 30 dias</div>
-              <div class="card-subtitle">% de hábitos realizados por dia</div>
-            </div>
-          </div>
+          <div class="card-header"><div>
+            <div class="card-title">Evolução — 30 dias</div>
+            <div class="card-subtitle">% de hábitos por dia</div>
+          </div></div>
           <div class="chart-wrap tall"><canvas id="indHistChart"></canvas></div>
         </div>
         <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Esta semana</div>
-              <div class="card-subtitle">Dias × % realizado</div>
-            </div>
-          </div>
+          <div class="card-header"><div>
+            <div class="card-title">Esta semana</div>
+            <div class="card-subtitle">Dias × % realizado</div>
+          </div></div>
           <div class="chart-wrap tall"><canvas id="indWeekChart"></canvas></div>
         </div>
       </div>
-
       <div class="charts-row-equal">
         <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Mapa de calor</div>
-              <div class="card-subtitle">Consistência — últimas 4 semanas</div>
-            </div>
-          </div>
+          <div class="card-header"><div>
+            <div class="card-title">Mapa de calor</div>
+            <div class="card-subtitle">Últimas 4 semanas</div>
+          </div></div>
           <div class="hm-header" id="hmHeader"></div>
-          <div class="heatmap"   id="heatmap"></div>
-          <div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap;">
+          <div class="heatmap" id="heatmap"></div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:12px;">
             <span style="font-size:10px;color:var(--text-muted)">0%</span>
             <div style="width:12px;height:12px;border-radius:3px;background:rgba(181,216,193,0.15)"></div>
             <div style="width:12px;height:12px;border-radius:3px;background:rgba(58,173,171,0.3)"></div>
@@ -183,61 +147,44 @@
           </div>
         </div>
         <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Hábitos em destaque</div>
-              <div class="card-subtitle">Adesão nos últimos 30 dias</div>
-            </div>
-          </div>
+          <div class="card-header"><div>
+            <div class="card-title">Hábitos em destaque</div>
+            <div class="card-subtitle">Adesão nos últimos 30 dias</div>
+          </div></div>
           <div style="overflow-x:auto;">
             <table class="habit-table" id="indHabitTable">
               <tr><th>Hábito</th><th>Categoria</th><th>Adesão</th></tr>
-              <tr>
-                <td colspan="3" style="color:var(--text-muted);font-style:italic;padding:20px 12px">
-                  Selecione um paciente
-                </td>
-              </tr>
+              <tr><td colspan="3" style="color:var(--text-muted);font-style:italic;padding:20px 12px">Selecione um paciente</td></tr>
             </table>
           </div>
         </div>
       </div>
-
     </div>
 
-    <!-- ── PAGE: HÁBITOS ───────────────────────────────── -->
+    <!-- HÁBITOS -->
     <div class="page" id="page-habitos">
-
       <div class="card" style="margin-bottom:20px;">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Adesão por hábito — todos os pacientes</div>
-            <div class="card-subtitle">Últimos 30 dias</div>
-          </div>
-        </div>
+        <div class="card-header"><div>
+          <div class="card-title">Adesão por hábito — todos os pacientes</div>
+          <div class="card-subtitle">Últimos 30 dias</div>
+        </div></div>
         <div class="chart-wrap" style="height:320px"><canvas id="allHabitsChart"></canvas></div>
       </div>
-
       <div class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Ranking de hábitos</div>
-            <div class="card-subtitle">Do mais ao menos aderido</div>
-          </div>
-        </div>
+        <div class="card-header"><div>
+          <div class="card-title">Ranking de hábitos</div>
+          <div class="card-subtitle">Do mais ao menos aderido</div>
+        </div></div>
         <table class="habit-table" id="allHabitsTable">
           <tr><th>#</th><th>Hábito</th><th>Categoria</th><th>Adesão média</th></tr>
         </table>
       </div>
-
     </div>
 
-  </div><!-- .main-content -->
-</div><!-- .layout -->
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
-
-<!-- Módulo ES -->
-<script type="module" src="js/dashboard.js"></script>
-
+<script src="js/dashboard.js"></script>
 </body>
 </html>

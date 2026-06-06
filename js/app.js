@@ -1,53 +1,108 @@
 // ═══════════════════════════════════════════════════════
-//  app.js — Lógica do app do paciente (index.html)
+//  app.js — App do paciente
+//  Vanilla JS puro — sem import/export — funciona em
+//  todos os navegadores (Chrome, Safari, Firefox, Edge)
 // ═══════════════════════════════════════════════════════
 
-import {
-  load, save, dateKey, lastNDays, formatDate,
-  showToast, makeChart, COLORS, CHART_DEFAULTS,
-  pctScaleOptions, labelScaleOptions,
-  GROUP_ICONS, DAY_NAMES, DEFAULT_HABITS,
-} from './utils.js';
-
-// ── ⚙️  ÚNICA LINHA QUE VOCÊ PRECISA EDITAR ──────────────
-//  Cole aqui a URL do seu Google Apps Script
-const SCRIPT_URL = 'COLE_AQUI_SUA_URL_DO_APPS_SCRIPT';
+// ── ⚙️  ÚNICA LINHA QUE VOCÊ PRECISA EDITAR ─────────────
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBCQIagtpMtHHksBvAQmU9Uf4q4maNUgqWyUne8fRzo61MaPyrozk0emMvy4IX4cbM/exec';
 // Exemplo:
-// const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx.../exec';
-// ─────────────────────────────────────────────────────────
+// var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx.../exec';
+// ────────────────────────────────────────────────────────
+
+// ── CONSTANTES ────────────────────────────────────────────
+var DEFAULT_HABITS = [
+  { id: 'h1',  name: 'Beber 2L de água',                 group: 'Hidratação' },
+  { id: 'h2',  name: 'Café da manhã equilibrado',         group: 'Nutrição'   },
+  { id: 'h3',  name: 'Almoço com vegetais',               group: 'Nutrição'   },
+  { id: 'h4',  name: 'Probiótico / fermentado',           group: 'Intestino'  },
+  { id: 'h5',  name: 'Fibras na refeição',                group: 'Intestino'  },
+  { id: 'h6',  name: 'Atividade física',                  group: 'Movimento'  },
+  { id: 'h7',  name: 'Dormir ≥ 7h',                      group: 'Sono'       },
+  { id: 'h8',  name: 'Sem telas 30min antes de dormir',   group: 'Sono'       },
+  { id: 'h9',  name: 'Meditação / respiração',            group: 'Mente'      },
+  { id: 'h10', name: 'Sem ultraprocessados',              group: 'Nutrição'   },
+];
+
+var GROUP_ICONS = {
+  'Nutrição': '🥗', 'Hidratação': '💧', 'Movimento': '🏃',
+  'Sono': '🌙', 'Mente': '🧠', 'Intestino': '🦠', 'Outros': '✦'
+};
+
+var DAY_NAMES = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
 // ── ESTADO ────────────────────────────────────────────────
-let currentDateOffset = 0;
-const charts = {};
+var currentDateOffset = 0;
+var appCharts = {};
 
-// ── STORAGE HELPERS ───────────────────────────────────────
-const getHabits  = () => load('habits_list', DEFAULT_HABITS);
-const getChecked = (dk) => load('checked_' + dk, []);
-const setChecked = (dk, arr) => save('checked_' + dk, arr);
+// ── STORAGE ───────────────────────────────────────────────
+function storageLoad(key, fallback) {
+  try {
+    var raw = localStorage.getItem(key);
+    return raw !== null ? JSON.parse(raw) : fallback;
+  } catch(e) { return fallback; }
+}
+
+function storageSave(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function getHabits()     { return storageLoad('habits_list', DEFAULT_HABITS); }
+function getChecked(dk)  { return storageLoad('checked_' + dk, []); }
+function setChecked(dk, arr) { storageSave('checked_' + dk, arr); }
+
+// ── DATAS ─────────────────────────────────────────────────
+function getDateKey(offset) {
+  offset = offset || 0;
+  var d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0, 10);
+}
+
+function lastNDays(n) {
+  var days = [];
+  for (var i = 0; i < n; i++) days.push(getDateKey(-i));
+  return days;
+}
+
+function formatDatePtBR(date) {
+  return date.toLocaleDateString('pt-BR', {
+    weekday: 'long', day: 'numeric', month: 'long'
+  });
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+var toastTimer = null;
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.classList.remove('show'); }, 2200);
+}
 
 // ── INIT ──────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  // Lê parâmetros da URL: ?p=CODIGO&n=Nome
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('p')) save('patient_code', params.get('p'));
-  if (params.get('n')) save('patient_name', decodeURIComponent(params.get('n')));
+document.addEventListener('DOMContentLoaded', function() {
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('p')) storageSave('patient_code', params.get('p'));
+  if (params.get('n')) storageSave('patient_name', decodeURIComponent(params.get('n')));
 
-  const code = load('patient_code', '');
-  const name = load('patient_name', 'Paciente');
+  var code = storageLoad('patient_code', '');
+  var name = storageLoad('patient_name', 'Paciente');
 
-  // Preenche o cabeçalho de boas-vindas
-  const elCode = document.getElementById('welcomeCode');
-  const elName = document.getElementById('welcomeName');
-  const elSub  = document.getElementById('welcomeSub');
-  if (elCode) elCode.textContent = code ? `#${code}` : '';
-  if (elName) elName.textContent = `Olá, ${name.split(' ')[0]} 👋`;
-  if (elSub)  elSub.textContent  = formatDate(new Date());
+  var elCode = document.getElementById('welcomeCode');
+  var elName = document.getElementById('welcomeName');
+  var elSub  = document.getElementById('welcomeSub');
+  if (elCode) elCode.textContent = code ? '#' + code : '';
+  if (elName) elName.textContent = 'Olá, ' + name.split(' ')[0] + ' 👋';
+  if (elSub)  elSub.textContent  = formatDatePtBR(new Date());
 
-  // Mostra status do script na aba Configurar
-  const elStatus = document.getElementById('configStatus');
+  // Status da conexão
+  var elStatus = document.getElementById('configStatus');
   if (elStatus) {
-    const ativo = SCRIPT_URL && !SCRIPT_URL.includes('COLE_AQUI');
-    elStatus.textContent = ativo ? 'configurado ✓' : 'não configurado';
+    var ativo = SCRIPT_URL && SCRIPT_URL.indexOf('COLE_AQUI') === -1;
+    elStatus.textContent = ativo ? 'configurado ✓' : 'não configurado — edite js/app.js';
     elStatus.style.color = ativo ? '#5cb85c' : '#e05c5c';
   }
 
@@ -55,278 +110,310 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSettings();
 });
 
-// ── NAVEGAÇÃO DE ABAS ─────────────────────────────────────
-window.switchTab = function (name) {
-  document.querySelectorAll('.tab').forEach((t, i) =>
-    t.classList.toggle('active', ['hoje', 'semana', 'configurar'][i] === name)
-  );
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+// ── NAVEGAÇÃO ─────────────────────────────────────────────
+function switchTab(name) {
+  var tabs = ['hoje', 'semana', 'configurar'];
+  document.querySelectorAll('.tab').forEach(function(t, i) {
+    t.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.section').forEach(function(s) {
+    s.classList.remove('active');
+  });
   document.getElementById('tab-' + name).classList.add('active');
-
   if (name === 'semana')     renderWeek();
   if (name === 'configurar') renderSettings();
-};
+}
 
 // ── HOJE ──────────────────────────────────────────────────
 function renderToday() {
-  const dk      = dateKey(currentDateOffset);
-  const d       = new Date();
+  var dk      = getDateKey(currentDateOffset);
+  var d       = new Date();
   d.setDate(d.getDate() + currentDateOffset);
 
-  const habits  = getHabits();
-  const checked = getChecked(dk);
+  var habits  = getHabits();
+  var checked = getChecked(dk);
 
-  document.getElementById('dateMain').textContent      = formatDate(d);
-  document.getElementById('dateSub').textContent       = dk;
-  document.getElementById('btnNext').disabled          = currentDateOffset >= 0;
+  var elMain = document.getElementById('dateMain');
+  var elSub  = document.getElementById('dateSub');
+  var elNext = document.getElementById('btnNext');
+  if (elMain) elMain.textContent = formatDatePtBR(d);
+  if (elSub)  elSub.textContent  = dk;
+  if (elNext) elNext.disabled    = currentDateOffset >= 0;
 
-  // KPIs
-  const todayPct = habits.length
-    ? Math.round(checked.length / habits.length * 100)
-    : 0;
+  var todayPct = habits.length
+    ? Math.round(checked.length / habits.length * 100) : 0;
 
-  document.getElementById('scoreToday').innerHTML        = `${todayPct}<sup>%</sup>`;
-  document.getElementById('progressFill').style.width    = todayPct + '%';
-  document.getElementById('progressLabel').textContent   =
-    `${checked.length} de ${habits.length} hábitos concluídos`;
+  var elToday    = document.getElementById('scoreToday');
+  var elFill     = document.getElementById('progressFill');
+  var elLabel    = document.getElementById('progressLabel');
+  if (elToday) elToday.innerHTML = todayPct + '<sup>%</sup>';
+  if (elFill)  elFill.style.width = todayPct + '%';
+  if (elLabel) elLabel.textContent =
+    checked.length + ' de ' + habits.length + ' hábitos concluídos';
 
-  const weekDays = lastNDays(7);
-  const weekAvg  = habits.length
-    ? Math.round(
-        weekDays.reduce((s, dk2) => s + getChecked(dk2).length, 0)
-        / habits.length / 7 * 100
-      )
-    : 0;
-  document.getElementById('scoreWeek').innerHTML   = `${weekAvg}<sup>%</sup>`;
-  document.getElementById('scoreStreak').innerHTML = `${calcStreakGlobal()}<sup> dias</sup>`;
+  // Média semanal
+  var weekDays = lastNDays(7);
+  var weekSum  = 0;
+  weekDays.forEach(function(dk2) { weekSum += getChecked(dk2).length; });
+  var weekAvg = habits.length ? Math.round(weekSum / habits.length / 7 * 100) : 0;
 
-  // Grupos de hábitos
-  const groups = {};
-  habits.forEach(h => {
+  var elWeek   = document.getElementById('scoreWeek');
+  var elStreak = document.getElementById('scoreStreak');
+  if (elWeek)   elWeek.innerHTML   = weekAvg + '<sup>%</sup>';
+  if (elStreak) elStreak.innerHTML = calcStreak() + '<sup> dias</sup>';
+
+  // Renderiza grupos de hábitos
+  var groups = {};
+  habits.forEach(function(h) {
     if (!groups[h.group]) groups[h.group] = [];
     groups[h.group].push(h);
   });
 
-  const container = document.getElementById('habitGroups');
+  var container = document.getElementById('habitGroups');
   if (!container) return;
 
   if (!habits.length) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="emoji">🌱</div>
-        <p>Vá em <strong>Configurar</strong> para adicionar hábitos.</p>
-      </div>`;
+    container.innerHTML =
+      '<div class="empty-state"><div class="emoji">🌱</div>' +
+      '<p>Vá em <strong>Hábitos</strong> para adicionar.</p></div>';
     return;
   }
 
-  container.innerHTML = Object.entries(groups).map(([group, items]) => `
-    <div class="group-title">
-      <div class="icon">${GROUP_ICONS[group] || '✦'}</div>
-      ${group}
-    </div>
-    <div class="habits-grid">
-      ${items.map(h => {
-        const done = checked.includes(h.id);
-        return `
-          <div class="habit-card ${done ? 'checked' : ''}" onclick="toggleHabit('${h.id}')">
-            <div class="check-box">${done ? '✓' : ''}</div>
-            <div class="habit-name">${h.name}</div>
-            <div class="habit-syncing" id="sync_${h.id}"></div>
-          </div>`;
-      }).join('')}
-    </div>
-  `).join('');
+  var html = '';
+  Object.keys(groups).forEach(function(group) {
+    var items = groups[group];
+    html += '<div class="group-title">' +
+      '<div class="icon">' + (GROUP_ICONS[group] || '✦') + '</div>' +
+      group + '</div>';
+    html += '<div class="habits-grid">';
+    items.forEach(function(h) {
+      var done = checked.indexOf(h.id) > -1;
+      html +=
+        '<div class="habit-card ' + (done ? 'checked' : '') +
+        '" onclick="toggleHabit(\'' + h.id + '\')">' +
+        '<div class="check-box">' + (done ? '✓' : '') + '</div>' +
+        '<div class="habit-name">' + h.name + '</div>' +
+        '<div class="habit-syncing" id="sync_' + h.id + '"></div>' +
+        '</div>';
+    });
+    html += '</div>';
+  });
+  container.innerHTML = html;
 }
 
-function calcStreakGlobal() {
-  const habits = getHabits();
-  let streak = 0;
-  for (let i = 0; i <= 365; i++) {
-    const dk = dateKey(-i);
-    const c  = getChecked(dk);
+function calcStreak() {
+  var habits = getHabits();
+  var streak = 0;
+  for (var i = 0; i <= 365; i++) {
+    var dk = getDateKey(-i);
+    var c  = getChecked(dk);
     if (habits.length > 0 && c.length >= habits.length * 0.5) streak++;
     else if (i > 0) break;
   }
   return streak;
 }
 
-window.toggleHabit = function (hid) {
-  const dk      = dateKey(currentDateOffset);
-  const checked = getChecked(dk);
-  const idx     = checked.indexOf(hid);
-
+function toggleHabit(hid) {
+  var dk      = getDateKey(currentDateOffset);
+  var checked = getChecked(dk);
+  var idx     = checked.indexOf(hid);
   if (idx > -1) checked.splice(idx, 1);
   else          checked.push(hid);
-
   setChecked(dk, checked);
   renderToday();
+  var habit = getHabits().filter(function(h) { return h.id === hid; })[0];
+  if (habit) syncHabit(hid, habit, dk, checked.indexOf(hid) > -1);
+}
 
-  const habit = getHabits().find(h => h.id === hid);
-  if (habit) syncHabit(hid, habit, dk, checked.includes(hid));
-};
-
-window.changeDay = function (delta) {
+function changeDay(delta) {
   currentDateOffset = Math.min(0, currentDateOffset + delta);
   renderToday();
-};
+}
 
 // ── SYNC GOOGLE SHEETS ────────────────────────────────────
 function syncHabit(hid, habit, date, checked) {
-  // Usa a URL fixa — não depende de localStorage nem de campo no app
-  const url = SCRIPT_URL;
+  if (!SCRIPT_URL || SCRIPT_URL.indexOf('COLE_AQUI') > -1) return;
 
-  if (!url || url.includes('COLE_AQUI')) {
-    console.warn('URL do Apps Script não configurada em app.js');
-    return;
-  }
-
-  const el = document.getElementById('sync_' + hid);
+  var el = document.getElementById('sync_' + hid);
   if (el) el.textContent = '↑';
   setSyncStatus('syncing', 'Sincronizando…');
 
-  const payload = {
-    patientCode: load('patient_code', 'SEM_CODIGO'),
-    patientName: load('patient_name', 'Paciente'),
-    date,
-    habitId:    hid,
-    habitName:  habit.name,
-    habitGroup: habit.group,
-    checked,
-    timestamp:  new Date().toISOString(),
-  };
+  var payload = JSON.stringify({
+    patientCode: storageLoad('patient_code', 'SEM_CODIGO'),
+    patientName: storageLoad('patient_name', 'Paciente'),
+    date:        date,
+    habitId:     hid,
+    habitName:   habit.name,
+    habitGroup:  habit.group,
+    checked:     checked,
+    timestamp:   new Date().toISOString()
+  });
 
-  fetch(url, {
-    method:  'POST',
-    mode:    'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(payload),
-  })
-    .then(() => {
-      if (el) el.textContent = '';
-      setSyncStatus('ok', 'Salvo ✓');
-      setTimeout(() => setSyncStatus('', ''), 3000);
-    })
-    .catch(() => {
-      if (el) el.textContent = '⚠';
-      setSyncStatus('err', 'Erro de conexão');
-    });
+  // Usa XMLHttpRequest — funciona em TODOS os navegadores
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', SCRIPT_URL, true);
+  xhr.setRequestHeader('Content-Type', 'text/plain'); // text/plain evita preflight CORS
+  xhr.onload = function() {
+    if (el) el.textContent = '';
+    setSyncStatus('ok', 'Salvo ✓');
+    setTimeout(function() { setSyncStatus('', ''); }, 3000);
+  };
+  xhr.onerror = function() {
+    if (el) el.textContent = '⚠';
+    setSyncStatus('err', 'Erro de conexão');
+  };
+  xhr.send(payload);
 }
 
 function setSyncStatus(state, label) {
-  const dot = document.getElementById('syncDot');
+  var dot = document.getElementById('syncDot');
   if (!dot) return;
   dot.className = 'sync-dot' + (state ? ' ' + state : '');
-  document.getElementById('syncLabel').textContent = label;
+  var lbl = document.getElementById('syncLabel');
+  if (lbl) lbl.textContent = label;
 }
 
 // ── SEMANA ────────────────────────────────────────────────
 function renderWeek() {
-  const habits = getHabits();
-  const last7  = lastNDays(7).reverse();
-  const labels = last7.map(d => DAY_NAMES[new Date(d + 'T12:00:00').getDay()]);
-  const data   = last7.map(d =>
-    habits.length ? Math.round(getChecked(d).length / habits.length * 100) : 0
-  );
+  var habits = getHabits();
+  var last7  = lastNDays(7).reverse();
+  var labels = last7.map(function(d) {
+    return DAY_NAMES[new Date(d + 'T12:00:00').getDay()];
+  });
+  var data = last7.map(function(d) {
+    return habits.length
+      ? Math.round(getChecked(d).length / habits.length * 100) : 0;
+  });
 
-  // Mini grid
-  const wg = document.getElementById('weekGrid');
+  var wg = document.getElementById('weekGrid');
   if (wg) {
-    wg.innerHTML = last7.map((d, i) => {
-      const pct   = data[i];
-      const cls   = pct === 100 ? 'full' : pct >= 70 ? 'good' : '';
-      const today = i === last7.length - 1 ? 'today' : '';
-      return `
-        <div class="week-day ${cls} ${today}">
-          <div class="wd-label">${labels[i]}</div>
-          <div class="wd-pct">${pct}%</div>
-        </div>`;
-    }).join('');
+    var wgHtml = '';
+    last7.forEach(function(d, i) {
+      var pct   = data[i];
+      var cls   = pct === 100 ? 'full' : pct >= 70 ? 'good' : '';
+      var today = i === last7.length - 1 ? 'today' : '';
+      wgHtml +=
+        '<div class="week-day ' + cls + ' ' + today + '">' +
+        '<div class="wd-label">' + labels[i] + '</div>' +
+        '<div class="wd-pct">' + pct + '%</div></div>';
+    });
+    wg.innerHTML = wgHtml;
   }
 
-  makeChart(charts, 'weekChart', {
+  makeAppChart('weekChart', {
     type: 'bar',
     data: {
-      labels,
+      labels: labels,
       datasets: [{
-        data,
-        backgroundColor: data.map(v =>
-          v >= 80 ? 'rgba(58,173,171,0.85)' :
-          v >= 50 ? 'rgba(181,216,193,0.8)' :
-                    'rgba(242,220,109,0.7)'
-        ),
-        borderRadius: 8,
-        borderSkipped: false,
-      }],
+        data: data,
+        backgroundColor: data.map(function(v) {
+          return v >= 80 ? 'rgba(58,173,171,0.85)'
+               : v >= 50 ? 'rgba(181,216,193,0.8)'
+               :            'rgba(242,220,109,0.7)';
+        }),
+        borderRadius: 8, borderSkipped: false
+      }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
-      scales: { y: pctScaleOptions(), x: labelScaleOptions() },
-    },
+      scales: {
+        y: { min:0, max:100,
+          ticks: { callback: function(v){return v+'%';},
+            font:{family:'DM Sans',size:11}, color:'#6b8583' },
+          grid: { color:'rgba(58,173,171,0.07)' } },
+        x: { ticks:{font:{family:'DM Sans',size:11},color:'#6b8583'},
+          grid:{display:false} }
+      }
+    }
   });
 
-  const habitData = habits.map(h => {
-    const count = last7.filter(d => getChecked(d).includes(h.id)).length;
+  var habitData = habits.map(function(h) {
+    var count = last7.filter(function(d) {
+      return getChecked(d).indexOf(h.id) > -1;
+    }).length;
     return {
-      name: h.name.length > 18 ? h.name.slice(0, 16) + '…' : h.name,
-      pct:  Math.round(count / 7 * 100),
+      name: h.name.length > 18 ? h.name.slice(0,16)+'…' : h.name,
+      pct:  Math.round(count / 7 * 100)
     };
   });
 
-  makeChart(charts, 'habitChart', {
+  makeAppChart('habitChart', {
     type: 'bar',
     data: {
-      labels: habitData.map(h => h.name),
+      labels: habitData.map(function(h){return h.name;}),
       datasets: [{
-        data:            habitData.map(h => h.pct),
+        data: habitData.map(function(h){return h.pct;}),
         backgroundColor: 'rgba(58,173,171,0.7)',
-        borderRadius:    6,
-        borderSkipped:   false,
-      }],
+        borderRadius: 6, borderSkipped: false
+      }]
     },
     options: {
       indexAxis: 'y',
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
-      scales: { x: pctScaleOptions('x'), y: labelScaleOptions() },
-    },
+      scales: {
+        x: { min:0, max:100,
+          ticks:{callback:function(v){return v+'%';},
+            font:{family:'DM Sans',size:11},color:'#6b8583'},
+          grid:{color:'rgba(58,173,171,0.07)'} },
+        x: { ticks:{font:{family:'DM Sans',size:11},color:'#6b8583'},
+          grid:{display:false} }
+      }
+    }
   });
+}
+
+function makeAppChart(id, config) {
+  if (appCharts[id]) { appCharts[id].destroy(); }
+  var ctx = document.getElementById(id);
+  if (!ctx) return;
+  appCharts[id] = new Chart(ctx.getContext('2d'), config);
 }
 
 // ── CONFIGURAÇÕES ─────────────────────────────────────────
 function renderSettings() {
-  const habits = getHabits();
-  const el     = document.getElementById('habitsList');
+  var habits = getHabits();
+  var el     = document.getElementById('habitsList');
   if (!el) return;
 
-  el.innerHTML = habits.length
-    ? habits.map(h => `
-        <div class="habit-list-item">
-          <div class="hli-dot"></div>
-          <div class="hli-name">${h.name}</div>
-          <div class="hli-group">${GROUP_ICONS[h.group] || ''} ${h.group}</div>
-          <button class="btn-del" onclick="deleteHabit('${h.id}')" title="Remover">×</button>
-        </div>`).join('')
-    : `<div class="empty-state"><div class="emoji">🌱</div><p>Nenhum hábito ainda.</p></div>`;
+  if (!habits.length) {
+    el.innerHTML =
+      '<div class="empty-state"><div class="emoji">🌱</div>' +
+      '<p>Nenhum hábito ainda.</p></div>';
+    return;
+  }
+
+  var html = '';
+  habits.forEach(function(h) {
+    html +=
+      '<div class="habit-list-item">' +
+      '<div class="hli-dot"></div>' +
+      '<div class="hli-name">' + h.name + '</div>' +
+      '<div class="hli-group">' + (GROUP_ICONS[h.group]||'') + ' ' + h.group + '</div>' +
+      '<button class="btn-del" onclick="deleteHabit(\'' + h.id + '\')" title="Remover">×</button>' +
+      '</div>';
+  });
+  el.innerHTML = html;
 }
 
-window.addHabit = function () {
-  const name  = document.getElementById('newHabitName').value.trim();
-  const group = document.getElementById('newHabitGroup').value;
+function addHabit() {
+  var name  = document.getElementById('newHabitName').value.trim();
+  var group = document.getElementById('newHabitGroup').value;
   if (!name) { showToast('Digite o nome do hábito'); return; }
-
-  const habits = getHabits();
-  habits.push({ id: 'h' + Date.now(), name, group });
-  save('habits_list', habits);
+  var habits = getHabits();
+  habits.push({ id: 'h' + Date.now(), name: name, group: group });
+  storageSave('habits_list', habits);
   document.getElementById('newHabitName').value = '';
   renderSettings();
   renderToday();
   showToast('Hábito adicionado ✓');
-};
+}
 
-window.deleteHabit = function (hid) {
+function deleteHabit(hid) {
   if (!confirm('Remover este hábito?')) return;
-  save('habits_list', getHabits().filter(h => h.id !== hid));
+  var habits = getHabits().filter(function(h){ return h.id !== hid; });
+  storageSave('habits_list', habits);
   renderSettings();
   renderToday();
-};
+}
