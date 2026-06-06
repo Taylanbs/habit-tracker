@@ -9,12 +9,15 @@ import {
   GROUP_ICONS, DAY_NAMES, DEFAULT_HABITS,
 } from './utils.js';
 
-// ── URL DO APPS SCRIPT (fixa — não precisa o paciente configurar) ──
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBCQIagtpMtHHksBvAQmU9Uf4q4maNUgqWyUne8fRzo61MaPyrozk0emMvy4IX4cbM/exec';
+// ── ⚙️  ÚNICA LINHA QUE VOCÊ PRECISA EDITAR ──────────────
+//  Cole aqui a URL do seu Google Apps Script
+const SCRIPT_URL = 'COLE_AQUI_SUA_URL_DO_APPS_SCRIPT';
 // Exemplo:
 // const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx.../exec';
+// ─────────────────────────────────────────────────────────
 
-const SCRIPT_URL_KEY = 'gsheet_script_url';
+// ── ESTADO ────────────────────────────────────────────────
+let currentDateOffset = 0;
 const charts = {};
 
 // ── STORAGE HELPERS ───────────────────────────────────────
@@ -32,15 +35,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const code = load('patient_code', '');
   const name = load('patient_name', 'Paciente');
 
-  document.getElementById('welcomeCode').textContent = code ? `#${code}` : '';
-  document.getElementById('welcomeName').textContent  = `Olá, ${name.split(' ')[0]} 👋`;
-  document.getElementById('welcomeSub').textContent   = formatDate(new Date());
+  // Preenche o cabeçalho de boas-vindas
+  const elCode = document.getElementById('welcomeCode');
+  const elName = document.getElementById('welcomeName');
+  const elSub  = document.getElementById('welcomeSub');
+  if (elCode) elCode.textContent = code ? `#${code}` : '';
+  if (elName) elName.textContent = `Olá, ${name.split(' ')[0]} 👋`;
+  if (elSub)  elSub.textContent  = formatDate(new Date());
 
-  const url = SCRIPT_URL || load(SCRIPT_URL_KEY, '');
-  if (url) {
-    document.getElementById('scriptUrl').value = url;
-    document.getElementById('configStatus').textContent  = 'configurado';
-    document.getElementById('configStatus').style.color  = '#5cb85c';
+  // Mostra status do script na aba Configurar
+  const elStatus = document.getElementById('configStatus');
+  if (elStatus) {
+    const ativo = SCRIPT_URL && !SCRIPT_URL.includes('COLE_AQUI');
+    elStatus.textContent = ativo ? 'configurado ✓' : 'não configurado';
+    elStatus.style.color = ativo ? '#5cb85c' : '#e05c5c';
   }
 
   renderToday();
@@ -55,7 +63,7 @@ window.switchTab = function (name) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
 
-  if (name === 'semana')    renderWeek();
+  if (name === 'semana')     renderWeek();
   if (name === 'configurar') renderSettings();
 };
 
@@ -68,23 +76,28 @@ function renderToday() {
   const habits  = getHabits();
   const checked = getChecked(dk);
 
-  document.getElementById('dateMain').textContent = formatDate(d);
-  document.getElementById('dateSub').textContent  = dk;
-  document.getElementById('btnNext').disabled     = currentDateOffset >= 0;
+  document.getElementById('dateMain').textContent      = formatDate(d);
+  document.getElementById('dateSub').textContent       = dk;
+  document.getElementById('btnNext').disabled          = currentDateOffset >= 0;
 
   // KPIs
-  const todayPct = habits.length ? Math.round(checked.length / habits.length * 100) : 0;
-  document.getElementById('scoreToday').innerHTML   = `${todayPct}<sup>%</sup>`;
-  document.getElementById('progressFill').style.width = todayPct + '%';
-  document.getElementById('progressLabel').textContent =
+  const todayPct = habits.length
+    ? Math.round(checked.length / habits.length * 100)
+    : 0;
+
+  document.getElementById('scoreToday').innerHTML        = `${todayPct}<sup>%</sup>`;
+  document.getElementById('progressFill').style.width    = todayPct + '%';
+  document.getElementById('progressLabel').textContent   =
     `${checked.length} de ${habits.length} hábitos concluídos`;
 
   const weekDays = lastNDays(7);
   const weekAvg  = habits.length
-    ? Math.round(weekDays.reduce((s, dk2) => s + getChecked(dk2).length, 0) / habits.length / 7 * 100)
+    ? Math.round(
+        weekDays.reduce((s, dk2) => s + getChecked(dk2).length, 0)
+        / habits.length / 7 * 100
+      )
     : 0;
-  document.getElementById('scoreWeek').innerHTML = `${weekAvg}<sup>%</sup>`;
-
+  document.getElementById('scoreWeek').innerHTML   = `${weekAvg}<sup>%</sup>`;
   document.getElementById('scoreStreak').innerHTML = `${calcStreakGlobal()}<sup> dias</sup>`;
 
   // Grupos de hábitos
@@ -95,6 +108,7 @@ function renderToday() {
   });
 
   const container = document.getElementById('habitGroups');
+  if (!container) return;
 
   if (!habits.length) {
     container.innerHTML = `
@@ -158,8 +172,13 @@ window.changeDay = function (delta) {
 
 // ── SYNC GOOGLE SHEETS ────────────────────────────────────
 function syncHabit(hid, habit, date, checked) {
-  const url = load(SCRIPT_URL_KEY, '');
-  if (!url) return;
+  // Usa a URL fixa — não depende de localStorage nem de campo no app
+  const url = SCRIPT_URL;
+
+  if (!url || url.includes('COLE_AQUI')) {
+    console.warn('URL do Apps Script não configurada em app.js');
+    return;
+  }
 
   const el = document.getElementById('sync_' + hid);
   if (el) el.textContent = '↑';
@@ -195,32 +214,34 @@ function syncHabit(hid, habit, date, checked) {
 
 function setSyncStatus(state, label) {
   const dot = document.getElementById('syncDot');
+  if (!dot) return;
   dot.className = 'sync-dot' + (state ? ' ' + state : '');
   document.getElementById('syncLabel').textContent = label;
 }
 
 // ── SEMANA ────────────────────────────────────────────────
 function renderWeek() {
-  const habits   = getHabits();
-  const last7    = lastNDays(7).reverse();
-  const labels   = last7.map(d => DAY_NAMES[new Date(d + 'T12:00:00').getDay()]);
-  const data     = last7.map(d => habits.length
-    ? Math.round(getChecked(d).length / habits.length * 100)
-    : 0
+  const habits = getHabits();
+  const last7  = lastNDays(7).reverse();
+  const labels = last7.map(d => DAY_NAMES[new Date(d + 'T12:00:00').getDay()]);
+  const data   = last7.map(d =>
+    habits.length ? Math.round(getChecked(d).length / habits.length * 100) : 0
   );
 
   // Mini grid
   const wg = document.getElementById('weekGrid');
-  wg.innerHTML = last7.map((d, i) => {
-    const pct    = data[i];
-    const cls    = pct === 100 ? 'full' : pct >= 70 ? 'good' : '';
-    const today  = i === last7.length - 1 ? 'today' : '';
-    return `
-      <div class="week-day ${cls} ${today}">
-        <div class="wd-label">${labels[i]}</div>
-        <div class="wd-pct">${pct}%</div>
-      </div>`;
-  }).join('');
+  if (wg) {
+    wg.innerHTML = last7.map((d, i) => {
+      const pct   = data[i];
+      const cls   = pct === 100 ? 'full' : pct >= 70 ? 'good' : '';
+      const today = i === last7.length - 1 ? 'today' : '';
+      return `
+        <div class="week-day ${cls} ${today}">
+          <div class="wd-label">${labels[i]}</div>
+          <div class="wd-pct">${pct}%</div>
+        </div>`;
+    }).join('');
+  }
 
   makeChart(charts, 'weekChart', {
     type: 'bar',
@@ -240,14 +261,10 @@ function renderWeek() {
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
-      scales: {
-        y: pctScaleOptions(),
-        x: labelScaleOptions(),
-      },
+      scales: { y: pctScaleOptions(), x: labelScaleOptions() },
     },
   });
 
-  // Por hábito
   const habitData = habits.map(h => {
     const count = last7.filter(d => getChecked(d).includes(h.id)).length;
     return {
@@ -271,10 +288,7 @@ function renderWeek() {
       indexAxis: 'y',
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
-      scales: {
-        x: pctScaleOptions('x'),
-        y: labelScaleOptions(),
-      },
+      scales: { x: pctScaleOptions('x'), y: labelScaleOptions() },
     },
   });
 }
@@ -283,6 +297,7 @@ function renderWeek() {
 function renderSettings() {
   const habits = getHabits();
   const el     = document.getElementById('habitsList');
+  if (!el) return;
 
   el.innerHTML = habits.length
     ? habits.map(h => `
@@ -314,12 +329,4 @@ window.deleteHabit = function (hid) {
   save('habits_list', getHabits().filter(h => h.id !== hid));
   renderSettings();
   renderToday();
-};
-
-window.saveConfig = function () {
-  const url    = document.getElementById('scriptUrl').value.trim();
-  const status = document.getElementById('configStatus');
-  save(SCRIPT_URL_KEY, url);
-  if (url) { status.textContent = 'configurado'; status.style.color = '#5cb85c'; }
-  else     { status.textContent = 'não configurado'; status.style.color = ''; }
 };
