@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════
 
 // ── ⚙️  ÚNICA LINHA QUE VOCÊ PRECISA EDITAR ─────────────
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBCQIagtpMtHHksBvAQmU9Uf4q4maNUgqWyUne8fRzo61MaPyrozk0emMvy4IX4cbM/exec';
+var SCRIPT_URL = 'COLE_AQUI_SUA_URL_DO_APPS_SCRIPT';
 // Exemplo:
 // var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx.../exec';
 // ────────────────────────────────────────────────────────
@@ -84,9 +84,23 @@ function showToast(msg) {
 
 // ── INIT ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
-  var params = new URLSearchParams(window.location.search);
-  if (params.get('p')) storageSave('patient_code', params.get('p'));
-  if (params.get('n')) storageSave('patient_name', decodeURIComponent(params.get('n')));
+  var params     = new URLSearchParams(window.location.search);
+  var urlCode    = params.get('p');
+  var urlName    = params.get('n');
+  var savedCode  = storageLoad('patient_code', '');
+
+  // Se a URL tem um código DIFERENTE do salvo → é outra paciente
+  // Limpa TUDO do localStorage para não misturar dados
+  if (urlCode && urlCode !== savedCode) {
+    localStorage.clear();
+    storageSave('patient_code', urlCode);
+    if (urlName) storageSave('patient_name', decodeURIComponent(urlName));
+  } else if (urlCode) {
+    // Mesmo código — só atualiza o nome se vier na URL
+    storageSave('patient_code', urlCode);
+    if (urlName) storageSave('patient_name', decodeURIComponent(urlName));
+  }
+  // Se não tem código na URL → usa o que está salvo (paciente abrindo de novo sem link)
 
   var code = storageLoad('patient_code', '');
   var name = storageLoad('patient_name', 'Paciente');
@@ -416,4 +430,39 @@ function deleteHabit(hid) {
   storageSave('habits_list', habits);
   renderSettings();
   renderToday();
+}
+
+// ── TESTE DE CONEXÃO (chamado pelo botão na aba Hábitos) ──────────
+function testarConexao() {
+  if (!SCRIPT_URL || SCRIPT_URL.indexOf('COLE_AQUI') > -1) {
+    alert('URL do Apps Script não configurada em js/app.js');
+    return;
+  }
+
+  var btn = document.getElementById('btnTestar');
+  if (btn) btn.textContent = 'Testando…';
+
+  var payload = JSON.stringify({
+    patientCode: storageLoad('patient_code', 'TESTE'),
+    patientName: storageLoad('patient_name', 'Teste de Conexão'),
+    date:        getDateKey(0),
+    habitId:     'teste',
+    habitName:   'Teste de Conexão',
+    habitGroup:  'Outros',
+    checked:     true,
+    timestamp:   new Date().toISOString()
+  });
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', SCRIPT_URL, true);
+  xhr.setRequestHeader('Content-Type', 'text/plain');
+  xhr.onload = function() {
+    if (btn) btn.textContent = 'Testar conexão';
+    alert('✓ Enviado com sucesso!\n\nVerifique agora se apareceu uma linha na sua planilha do Google Sheets.\n\nSe aparecer: está tudo funcionando.\nSe não aparecer: o problema está no Apps Script — reimplante.');
+  };
+  xhr.onerror = function() {
+    if (btn) btn.textContent = 'Testar conexão';
+    alert('✗ Erro de conexão.\n\nVerifique:\n1. A URL em js/app.js está correta?\n2. O script foi implantado como "App da Web"?\n3. O acesso está como "Qualquer pessoa"?');
+  };
+  xhr.send(payload);
 }
