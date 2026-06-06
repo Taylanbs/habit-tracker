@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════
 
 // ── ⚙️  ÚNICA LINHA QUE VOCÊ PRECISA EDITAR ─────────────
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBCQIagtpMtHHksBvAQmU9Uf4q4maNUgqWyUne8fRzo61MaPyrozk0emMvy4IX4cbM/exec';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0Q3dJ0SRNN-HYE1ICPbYKmEL43bqD-KwEJj6rRWQpNX9vmRuSmjPAVmNboCjIEWht/exec';
 // Exemplo:
 // var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx.../exec';
 // ────────────────────────────────────────────────────────
